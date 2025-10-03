@@ -1,29 +1,36 @@
-# Viral Gallery 🎬
+# Viral Gallery 🔥
 
-A romantic, glowing video/image archive that automatically displays all photos and links sent to your Telegram bot.
+⚡ 18+ neon-style attention-grabbing gallery
+⚡ Admin-only uploads, deletes, and updates
+⚡ Mobile reel-style scrolling
+⚡ Only the first link in caption is used for "Watch Now"
 
-## Setup Guide
+---
 
-### 1️⃣ Deploy to Netlify
-- Compress the folder into `viral-gallery.zip`
-- Go to [Netlify](https://app.netlify.com/) → Sites → New site → Upload ZIP
+## Setup
 
-### 2️⃣ Add Environment Variables
-- In **Netlify Site Settings → Build & deploy → Environment Variables** add:
+1️⃣ Deploy to Netlify  
+- Zip the folder (`viral-gallery`)  
+- Upload via Netlify → Sites → New site → Upload ZIP
+
+2️⃣ Add Environment Variables  
+- In Site Settings → Build & deploy → Environment Variables:
+
+BOT_TOKEN = your regenerated Telegram bot token
+FIREBASE_DB_URL = https://telegram-channel-site-default-rtdb.firebaseio.com/
 
 
-> Do **NOT** hardcode your token in code for security.
+3️⃣ Set Telegram Webhook:
 
-### 3️⃣ Set Telegram Webhook
-Replace `YOUR_TOKEN` and `YOUR_NETLIFY_SITE`:
+https://api.telegram.org/botYOUR_TOKEN/setWebhook?url=https://YOUR_NETLIFY_SITE.netlify.app/.netlify/functions/telegram-bot
 
 
-### 4️⃣ Test
-- Send a **photo** to your Telegram bot  
-- Use the **caption as the link** (e.g., `https://youtube.com/...`)  
-- Bot replies ✅ and your site auto-updates  
+4️⃣ Commands (Admin only):
 
-### 5️⃣ Notes
-- Newest entries show **first**  
-- The site uses a romantic purple-pink gradient with glowing buttons  
-- You can add/delete entries directly in Firebase if needed
+- Upload: send **photo + caption with link**  
+- Reply to bot message:
+  - `/delete` → delete this post
+  - `/update_thumbnail` → reply with new photo
+  - `/update_link` → reply with new caption containing URL
+
+5️⃣ Frontend updates automatically when new post is added
