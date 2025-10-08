@@ -5,143 +5,263 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Viral Videos Gallery 🔥</title>
 <style>
-  /* Reset */
-  * {margin:0;padding:0;box-sizing:border-box;}
-  body {
-    font-family: 'Arial Black', sans-serif;
-    background: linear-gradient(135deg, #0c0c0c, #1a1a1a);
-    color: #fff;
-    text-align: center;
-    overflow-x: hidden;
-  }
-
-  h1 {
-    margin: 25px 0 5px;
-    font-size: 2.8em;
-    color: #ff1a75;
-    text-shadow: 0 0 10px #ff4da6;
-  }
-
-  h3 {
-    margin-bottom: 25px;
-    font-weight: 400;
-    color: #ff80bf;
-  }
-
-  #gallery {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 40px;
-    padding-bottom: 50px;
-  }
-
-  .card {
-    background: rgba(20,20,20,0.9);
-    border: 2px solid #ff1a75;
-    border-radius: 15px;
-    overflow: hidden;
-    width: 90%;
-    max-width: 400px;
-    box-shadow: 0 0 20px #ff1a75;
-    transition: transform 0.3s, box-shadow 0.3s;
-    scroll-margin-top: 20px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-  }
-
-  .card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 0 30px #ff66aa;
-  }
-
-  img {
-    display: block;
-    width: 100%;
-    height: auto;        /* image keeps original shape */
-    object-fit: contain; /* full image visible, no crop */
-  }
-
-  .btn {
-    display: block;
-    margin: 15px auto 20px;
-    padding: 12px 20px;
-    background: #ff1a75;
-    color: #fff;
-    text-decoration: none;
-    font-weight: bold;
-    font-size: 1.1em;
-    border-radius: 8px;
-    box-shadow: 0 0 15px #ff4da6;
-    transition: 0.3s;
-  }
-
-  .btn:hover {
-    box-shadow: 0 0 25px #ff80bf;
-  }
-
-  /* Mobile reel-style partial next post visible */
-  @media (max-width: 768px) {
-    #gallery {
-      gap: 20px;
-    }
-    .card {
-      width: 95%;
-      max-width: none;
-    }
-  }
-
-  html {
-  scroll-behavior: smooth;
+/* Reset */
+* {margin:0;padding:0;box-sizing:border-box;}
+body {
+  font-family: 'Arial Black', sans-serif;
+  background: linear-gradient(135deg, #0c0c0c, #1a1a1a);
+  color: #fff;
+  text-align: center;
+  overflow-x: hidden;
 }
 
-  .card {
+h1 {
+  margin: 25px 0 5px;
+  font-size: 2.8em;
+  color: #ff1a75;
+  text-shadow: 0 0 10px #ff4da6;
+}
+
+.subtitle {
+  margin-bottom: 15px;
+  font-weight: 400;
+  color: #ff80bf;
+  font-size: 1.1em;
+}
+
+.download-btn {
+  display: inline-block;
+  margin-bottom: 25px;
+  padding: 12px 25px;
+  background: linear-gradient(135deg, #ff1a75, #ff4da6);
+  color: #fff;
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 1em;
+  border-radius: 25px;
+  box-shadow: 0 0 15px #ff1a75;
+  transition: 0.3s;
+  border: 2px solid #ff1a75;
+}
+
+.download-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 25px #ff66aa;
+  background: linear-gradient(135deg, #ff4da6, #ff80bf);
+}
+
+#gallery {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 40px;
+  padding-bottom: 50px;
+}
+
+.card {
+  background: rgba(20,20,20,0.9);
+  border: 2px solid #ff1a75;
+  border-radius: 15px;
+  overflow: hidden;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 0 20px #ff1a75;
+  transition: transform 0.3s, box-shadow 0.3s;
+  scroll-margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   opacity: 0;
   transform: translateY(20px);
   animation: fadeInUp 0.6s ease forwards;
 }
 
-@keyframes fadeInUp {
-  to {
-    opacity: 1;
-    transform: translateY(0);
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 0 30px #ff66aa;
+  border-color: #ff66aa;
+}
+
+img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+/* Glowing line under image - MATCHING CARD BORDER */
+.glow-line {
+  width: 100%;
+  height: 4px;
+  background: #ff1a75;
+  box-shadow: 0 0 10px #ff1a75, 0 0 20px #ff1a75;
+  border-radius: 2px;
+  margin-top: -4px;
+}
+
+.card:hover .glow-line {
+  background: #ff66aa;
+  box-shadow: 0 0 10px #ff66aa, 0 0 20px #ff66aa;
+}
+
+/* Full-width Watch Now button at card bottom */
+.card .btn {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 15px 0;
+  background: #ff1a75;
+  color: #fff;
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 1.1em;
+  border-radius: 0 0 15px 15px;
+  box-shadow: 0 0 15px #ff4da6;
+  transition: 0.3s;
+  text-align: center;
+}
+
+.card .btn:hover {
+  box-shadow: 0 0 25px #ff80bf;
+  background: #ff66aa;
+}
+
+/* Loading indicator */
+.loading {
+  display: none;
+  color: #ff80bf;
+  font-size: 1.2em;
+  margin: 20px 0;
+}
+
+.loading.show {
+  display: block;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  #gallery { gap: 20px; }
+  .card { width: 95%; max-width: none; }
+  .subtitle {
+    font-size: 1em;
+    padding: 0 15px;
   }
 }
-  
+
+html {
+  scroll-behavior: smooth;
+}
+
+@keyframes fadeInUp {
+  to { opacity: 1; transform: translateY(0); }
+}
 </style>
 </head>
 <body>
 
 <h1>Viral Videos Gallery 🔥</h1>
-<h3>Hot content feed</h3>
+<div class="subtitle">DiskWala app is required to play videos from this site.</div>
+<a href="https://play.google.com/store/apps/details?id=com.diskwalaapp" target="_blank" class="download-btn">
+  Download DiskWala App
+</a>
 
 <div id="gallery"></div>
+<div id="loading" class="loading">Loading more content...</div>
 
 <script>
 const DB_URL = "https://telegram-channel-site-default-rtdb.firebaseio.com/items.json";
+const gallery = document.getElementById("gallery");
+const loadingIndicator = document.getElementById("loading");
 
-async function loadGallery() {
-  const res = await fetch(DB_URL);
-  const data = await res.json();
-  const gallery = document.getElementById("gallery");
-  gallery.innerHTML = "";
+let lastFetchedKeys = [];
+const BATCH_SIZE = 10;
+let isLoading = false;
+let hasMoreData = true;
 
-  const entries = Object.values(data || {}).sort((a,b)=>b.timestamp-a.timestamp);
-  entries.forEach(item => {
-    const div = document.createElement("div");
-    div.className = "card";
-    div.innerHTML = `
-      <img src="${item.image}" />
-      <a href="${item.link}" target="_blank" class="btn">Watch Now</a>
-    `;
-    gallery.appendChild(div);
-  });
+function throttle(func, delay) {
+  let timeoutId;
+  let lastExecTime = 0;
+  return function (...args) {
+    const currentTime = Date.now();
+    if (currentTime - lastExecTime > delay) {
+      func.apply(this, args);
+      lastExecTime = currentTime;
+    }
+  };
 }
 
-loadGallery();
-setInterval(loadGallery, 10000); // auto-refresh every 10s
+async function loadPosts() {
+  if (isLoading || !hasMoreData) return;
+  
+  isLoading = true;
+  loadingIndicator.classList.add('show');
+  
+  try {
+    const res = await fetch(DB_URL);
+    const data = await res.json();
+    if (!data) {
+      hasMoreData = false;
+      return;
+    }
+
+    const entries = Object.entries(data)
+      .sort((a,b) => b[1].timestamp - a[1].timestamp);
+
+    const newEntries = entries.filter(([key]) => !lastFetchedKeys.includes(key));
+    
+    if (newEntries.length === 0) {
+      hasMoreData = false;
+      return;
+    }
+
+    const batch = newEntries.slice(0, BATCH_SIZE);
+    
+    for (let i = 0; i < batch.length; i++) {
+      const [key, item] = batch[i];
+      
+      const div = document.createElement("div");
+      div.className = "card";
+      div.style.animationDelay = `${i * 0.1}s`;
+      div.innerHTML = `
+        <img src="${item.image}" loading="lazy" alt="Viral video thumbnail" />
+        <div class="glow-line"></div>
+        <a href="${item.link}" target="_blank" class="btn">Watch Now</a>
+      `;
+      
+      gallery.appendChild(div);
+      lastFetchedKeys.push(key);
+      
+      if (i < batch.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 50));
+      }
+    }
+    
+    if (newEntries.length <= BATCH_SIZE) {
+      hasMoreData = false;
+    }
+    
+  } catch (err) {
+    console.error("Error loading posts:", err);
+    hasMoreData = false;
+  } finally {
+    isLoading = false;
+    loadingIndicator.classList.remove('show');
+  }
+}
+
+function checkScroll() {
+  const scrollThreshold = 500;
+  const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+  
+  if (scrollTop + clientHeight >= scrollHeight - scrollThreshold) {
+    loadPosts();
+  }
+}
+
+loadPosts();
+
+window.addEventListener("scroll", throttle(checkScroll, 200));
+window.addEventListener("resize", throttle(checkScroll, 200));
 </script>
 </body>
 </html>
