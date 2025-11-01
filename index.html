@@ -169,6 +169,7 @@ html {
 <div id="loading" class="loading">Loading more content...</div>
 
 <script>
+<<<<<<< HEAD
 const DB_URL = "https://telegram-channel-site-default-rtdb.firebaseio.com/items.json";
 const gallery = document.getElementById("gallery");
 const loadingIndicator = document.getElementById("loading");
@@ -188,6 +189,46 @@ function throttle(func, delay) {
       lastExecTime = currentTime;
     }
   };
+=======
+// Replace with your Supabase credentials
+const SUPABASE_URL = 'https://podqvmggwcszipcbnzdv.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBvZHF2bWdnd2NzemlwY2JuemR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE5NDgyMDksImV4cCI6MjA3NzUyNDIwOX0.3Hx-8GohlMV5wTeEUZ1UYE72V8934zpoNA3bNup8CmE';
+
+// Load gallery from Supabase
+async function loadGallery() {
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/items?select=*`, {
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch data');
+    }
+    
+    const data = await response.json();
+    const gallery = document.getElementById("gallery");
+    gallery.innerHTML = "";
+
+    // Sort by timestamp (newest first)
+    const entries = data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    
+    entries.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "card";
+      div.innerHTML = `
+        <img src="${item.image}" alt="Viral content" />
+        <a href="${item.link}" target="_blank" class="btn">Watch Now</a>
+      `;
+      gallery.appendChild(div);
+    });
+  } catch (error) {
+    console.error('Error loading gallery:', error);
+    document.getElementById("gallery").innerHTML = "<p>Error loading content. Please refresh.</p>";
+  }
+>>>>>>> fbb6665 (your message)
 }
 
 async function loadPosts() {

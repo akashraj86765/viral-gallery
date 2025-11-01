@@ -15,7 +15,8 @@ exports.handler = async (event) => {
       return { statusCode: 200, body: "Not admin" };
     }
 
-    const firebaseUrl = process.env.FIREBASE_DB_URL;
+    const SUPABASE_URL = process.env.SUPABASE_URL;
+    const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 
     // 1️⃣ Upload post (photo + caption)
     if (msg.photo && msg.caption) {
@@ -30,38 +31,85 @@ exports.handler = async (event) => {
       const links = msg.caption.match(urlRegex);
       const redirectLink = links ? links[0] : "";
 
-      const res = await axios.post(`${firebaseUrl}/items.json`, {
+      // Insert into Supabase
+      const { data } = await axios.post(`${SUPABASE_URL}/rest/v1/items`, {
         image: fileUrl,
         link: redirectLink,
-        timestamp: Date.now()
+        created_at: new Date().toISOString()
+      }, {
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        }
       });
 
-      const dbKey = res.data.name;
+      const dbId = data[0].id;
 
       // Send confirmation with instructions to delete/update
       const sentMsg = await axios.post(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`, {
         chat_id: chatId,
-        text: `New post added!\nReply to this message with:\n/delete → delete post\n/update_thumbnail → update image\n/update_link → update link\nKey: ${dbKey}`
+        text: `New post added!\nReply to this message with:\n/delete → delete post\n/update_thumbnail → update image\n/update_link → update link\nID: ${dbId}`
       });
 
       const messageId = sentMsg.data.result.message_id;
-      // Save mapping: message_id → dbKey
-      await axios.patch(`${firebaseUrl}/messageMap/${messageId}.json`, { key: dbKey });
+      
+      // Save mapping: message_id → dbId in Supabase
+      await axios.post(`${SUPABASE_URL}/rest/v1/message_map`, {
+        message_id: messageId,
+        item_id: dbId
+      }, {
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json'
+        }
+      });
     }
 
     // 2️⃣ Reply-based Delete/Update
     if (msg.reply_to_message && msg.text) {
       const replyId = msg.reply_to_message.message_id;
-      const mapRes = await axios.get(`${firebaseUrl}/messageMap/${replyId}.json`);
-      const dbKey = mapRes.data.key;
+      
+      // Get mapping from Supabase
+      const { data: mappingData } = await axios.get(
+        `${SUPABASE_URL}/rest/v1/message_map?message_id=eq.${replyId}&select=item_id`,
+        {
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+          }
+        }
+      );
 
-      if (!dbKey) return { statusCode: 200, body: "No mapping found" };
+      if (!mappingData || mappingData.length === 0) {
+        return { statusCode: 200, body: "No mapping found" };
+      }
+
+      const dbId = mappingData[0].item_id;
 
       // Delete
       if (msg.text.toLowerCase() === "/delete") {
-        await axios.delete(`${firebaseUrl}/items/${dbKey}.json`);
-        await axios.delete(`${firebaseUrl}/messageMap/${replyId}.json`);
-        await axios.post(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`, { chat_id: chatId, text: "✅ Post deleted!" });
+        await axios.delete(`${SUPABASE_URL}/rest/v1/items?id=eq.${dbId}`, {
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+          }
+        });
+        
+        // Also delete from message_map
+        await axios.delete(`${SUPABASE_URL}/rest/v1/message_map?message_id=eq.${replyId}`, {
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+          }
+        });
+        
+        await axios.post(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`, { 
+          chat_id: chatId, 
+          text: "✅ Post deleted!" 
+        });
       }
 
       // Update thumbnail
@@ -71,8 +119,20 @@ exports.handler = async (event) => {
         const fileInfo = await axios.get(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/getFile?file_id=${fileId}`);
         const fileUrl = `https://api.telegram.org/file/bot${process.env.BOT_TOKEN}/${fileInfo.data.result.file_path}`;
 
-        await axios.patch(`${firebaseUrl}/items/${dbKey}.json`, { image: fileUrl });
-        await axios.post(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`, { chat_id: chatId, text: "✅ Thumbnail updated!" });
+        await axios.patch(`${SUPABASE_URL}/rest/v1/items?id=eq.${dbId}`, {
+          image: fileUrl
+        }, {
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        await axios.post(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`, { 
+          chat_id: chatId, 
+          text: "✅ Thumbnail updated!" 
+        });
       }
 
       // Update link
@@ -80,11 +140,27 @@ exports.handler = async (event) => {
         const urlRegex = /(https?:\/\/[^\s]+)/g;
         const links = msg.caption ? msg.caption.match(urlRegex) : [];
         const redirectLink = links ? links[0] : "";
+        
         if (redirectLink) {
-          await axios.patch(`${firebaseUrl}/items/${dbKey}.json`, { link: redirectLink });
-          await axios.post(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`, { chat_id: chatId, text: "✅ Link updated!" });
+          await axios.patch(`${SUPABASE_URL}/rest/v1/items?id=eq.${dbId}`, {
+            link: redirectLink
+          }, {
+            headers: {
+              'apikey': SUPABASE_ANON_KEY,
+              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          await axios.post(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`, { 
+            chat_id: chatId, 
+            text: "✅ Link updated!" 
+          });
         } else {
-          await axios.post(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`, { chat_id: chatId, text: "❌ No valid link found in caption!" });
+          await axios.post(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`, { 
+            chat_id: chatId, 
+            text: "❌ No valid link found in caption!" 
+          });
         }
       }
     }
