@@ -1,173 +1,157 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Viral Videos Gallery 🔥</title>
-<style>
-  /* Reset */
-  * {margin:0;padding:0;box-sizing:border-box;}
-  body {
-    font-family: 'Arial Black', sans-serif;
-    background: linear-gradient(135deg, #0c0c0c, #1a1a1a);
-    color: #fff;
-    text-align: center;
-    overflow-x: hidden;
-  }
-
-  h1 {
-    margin: 25px 0 5px;
-    font-size: 2.8em;
-    color: #ff1a75;
-    text-shadow: 0 0 10px #ff4da6;
-  }
-
-  h3 {
-    margin-bottom: 25px;
-    font-weight: 400;
-    color: #ff80bf;
-  }
-
-  #gallery {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 40px;
-    padding-bottom: 50px;
-  }
-
-  .card {
-    background: rgba(20,20,20,0.9);
-    border: 2px solid #ff1a75;
-    border-radius: 15px;
-    overflow: hidden;
-    width: 90%;
-    max-width: 400px;
-    box-shadow: 0 0 20px #ff1a75;
-    transition: transform 0.3s, box-shadow 0.3s;
-    scroll-margin-top: 20px;
-  }
-
-  .card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 0 30px #ff66aa;
-  }
-
-  img {
-    width: 100%;
-    height: auto;
-    display: block;
-  }
-
-  .btn {
-    display: block;
-    margin: 0 auto;
-    padding: 20px 20px;
-    background: #ff1a75;
-    color: #fff;
-    text-decoration: none;
-    font-weight: bold;
-    font-size: 1.3em;
-    border-radius: 0;
-    box-shadow: none;
-    border: none;
-    width: 100%;
-    text-align: center;
-  }
-
-  .btn:hover {
-    background: #ff0066;
-    box-shadow: none;
-  }
-
-  .download-btn {
-    background: #4CAF50;
-    box-shadow: 0 0 15px #4CAF50;
-    margin: 10px auto 30px;
-    padding: 15px 25px;
-    font-size: 1.2em;
-    border-radius: 8px;
-    width: auto;
-    display: inline-block;
-}
-
-  .download-btn:hover {
-    box-shadow: 0 0 25px #66BB6A;
-    background: #4CAF50;
-  }
-
-  /* Mobile reel-style partial next post visible */
-  @media (max-width: 768px) {
-    #gallery {
-      gap: 20px;
-    }
-    .card {
-      width: 95%;
-      max-width: none;
-    }
-  }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Viral Videos Gallery 🔥</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #0a0a0a;
+            color: white;
+        }
+        .header {
+            text-align: center;
+            padding: 2rem 1rem;
+            background: linear-gradient(45deg, #ff0055, #00ff88);
+            color: black;
+            font-weight: bold;
+        }
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .download-banner {
+            background: #1a1a1a;
+            padding: 1rem;
+            text-align: center;
+            border-bottom: 2px solid #ff0055;
+        }
+        .download-banner a {
+            color: #00ff88;
+            font-size: 1.2rem;
+            text-decoration: none;
+            font-weight: bold;
+            border: 2px solid #00ff88;
+            padding: 0.5rem 1.5rem;
+            border-radius: 50px;
+            transition: 0.3s;
+        }
+        .download-banner a:hover {
+            background: #00ff88;
+            color: black;
+        }
+        .gallery {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .gallery-item {
+            width: 100%;
+            margin-bottom: 2rem;
+            background: #1a1a1a;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(255,0,85,0.3);
+        }
+        .gallery-item img {
+            width: 100%;
+            height: auto;
+            display: block;
+            border-bottom: 2px solid #00ff88;
+        }
+        .watch-btn {
+            display: block;
+            background: #ff0055;
+            color: white;
+            text-align: center;
+            padding: 1rem;
+            font-weight: bold;
+            text-decoration: none;
+            font-size: 1.2rem;
+            transition: 0.3s;
+        }
+        .watch-btn:hover {
+            background: #00ff88;
+            color: black;
+        }
+        .empty-gallery {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+            font-size: 1.2rem;
+        }
+    </style>
 </head>
 <body>
+    <div class="header">
+        <h1>🔥 Viral Videos Gallery 🔥</h1>
+    </div>
+    <div class="download-banner">
+        <a href="#" target="_blank">📱 Download DiskWala App Now</a>
+    </div>
 
-<h1>Viral Videos Gallery 🔥</h1>
-<h3>To Play Videos Download DiskWala App First</h3>
+    <div id="gallery-container" class="gallery">
+        <!-- Items will be injected here -->
+    </div>
 
-<!-- DiskWala App Download Button -->
-<a href="https://play.google.com/store/apps/details?id=com.diskwalaapp" target="_blank" class="btn download-btn">
-  📱 Download DiskWala App Now
-</a>
+    <div id="empty-message" class="empty-gallery" style="display: none;">
+        ✨ No videos yet. Check back later!
+    </div>
 
-<div id="gallery"></div>
+    <!-- Supabase JS client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // 🔁 REPLACE WITH YOUR ACTUAL SUPABASE URL AND ANON KEY
+        const SUPABASE_URL = 'https://podqvmggwcszipcbnzdv.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBvZHF2bWdnd2NzemlwY2JuemR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE5NDgyMDksImV4cCI6MjA3NzUyNDIwOX0.3Hx-8GohlMV5wTeEUZ1UYE72V8934zpoNA3bNup8CmE';
 
-<script>
-// Your Supabase credentials
-const SUPABASE_URL = 'https://podqvmggwcszipcbnzdv.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBvZHF2bWdnd2NzemlwY2JuemR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE5NDgyMDksImV4cCI6MjA3NzUyNDIwOX0.3Hx-8GohlMV5wTeEUZ1UYE72V8934zpoNA3bNup8CmE';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// Load gallery from Supabase
-async function loadGallery() {
-  try {
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/items?select=*`, {
-      headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-      }
-    });
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch data');
-    }
-    
-    const data = await response.json();
-    const gallery = document.getElementById("gallery");
-    gallery.innerHTML = "";
+        const galleryContainer = document.getElementById('gallery-container');
+        const emptyMessage = document.getElementById('empty-message');
 
-    // Sort by timestamp (newest first)
-    const entries = data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-    
-    entries.forEach(item => {
-      const div = document.createElement("div");
-      div.className = "card";
-      div.innerHTML = `
-        <img src="${item.image}" alt="Viral content" />
-        <a href="${item.link}" target="_blank" class="btn">Watch Now</a>
-      `;
-      gallery.appendChild(div);
-    });
+        async function loadGallery() {
+            try {
+                const { data: items, error } = await supabase
+                    .from('items')
+                    .select('*')
+                    .order('created_at', { ascending: false });
 
-    // If no images, show message
-    if (entries.length === 0) {
-      gallery.innerHTML = "<p style='color: #ff80bf; font-size: 1.2em;'>No content yet. Check back soon! 🔥</p>";
-    }
-  } catch (error) {
-    console.error('Error loading gallery:', error);
-    document.getElementById("gallery").innerHTML = "<p style='color: #ff4da6;'>Error loading content. Please refresh.</p>";
-  }
-}
+                if (error) throw error;
 
-loadGallery();
-setInterval(loadGallery, 10000); // auto-refresh every 10s
-</script>
+                if (items && items.length > 0) {
+                    emptyMessage.style.display = 'none';
+                    renderItems(items);
+                } else {
+                    emptyMessage.style.display = 'block';
+                    galleryContainer.innerHTML = '';
+                }
+            } catch (err) {
+                console.error('Error loading gallery:', err);
+                emptyMessage.textContent = 'Error loading gallery. Please try again later.';
+                emptyMessage.style.display = 'block';
+            }
+        }
+
+        function renderItems(items) {
+            galleryContainer.innerHTML = items.map(item => `
+                <div class="gallery-item">
+                    <img src="${item.image}" alt="Gallery image" loading="lazy">
+                    <a href="${item.link}" class="watch-btn" target="_blank" rel="noopener noreferrer">Watch Now</a>
+                </div>
+            `).join('');
+        }
+
+        loadGallery();
+    </script>
 </body>
 </html>

@@ -1,2 +1,8 @@
 [build]
-  functions = "functions"
+  functions = "netlify/functions"
+
+# Optional: Add headers if you want global CORS (your bot already handles CORS)
+# [[headers]]
+#   for = "/*"
+#   [headers.values]
+#     Access-Control-Allow-Origin = "*"
