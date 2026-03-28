@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Viral Videos Gallery 🔥</title>
+
+<!-- Cache control for better performance -->
+<meta http-equiv="Cache-Control" content="public, max-age=86400, immutable">
+<link rel="preconnect" href="https://podqvmggwcszipcbnzdv.supabase.co" />
+
 <style>
   /* Reset */
   * {margin:0;padding:0;box-sizing:border-box;}
@@ -90,7 +95,7 @@
     border-radius: 8px;
     width: auto;
     display: inline-block;
-}
+  }
 
   .download-btn:hover {
     box-shadow: 0 0 25px #66BB6A;
@@ -107,6 +112,22 @@
       max-width: none;
     }
   }
+
+  /* Loading indicator */
+  .loader {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #ff1a75;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 40px auto;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
 </style>
 </head>
 <body>
@@ -120,6 +141,7 @@
 </a>
 
 <div id="gallery"></div>
+<div id="loader" class="loader" style="display: none;"></div>
 
 <script>
 // Your Supabase credentials
@@ -128,16 +150,38 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 let currentItems = [];
 let isLoading = false;
+let lastUpdateTime = 0;
+const CACHE_DURATION = 300000; // 5 minutes between refreshes
 
-// Load gallery from Supabase
-async function loadGallery() {
+// Show/hide loader
+function showLoader(show) {
+  const loader = document.getElementById('loader');
+  if (loader) {
+    loader.style.display = show ? 'block' : 'none';
+  }
+}
+
+// Load gallery from Supabase with caching
+async function loadGallery(forceRefresh = false) {
+  const now = Date.now();
+  
+  // Don't refresh too often if we already have content (unless forced)
+  if (!forceRefresh && currentItems.length > 0 && (now - lastUpdateTime) < CACHE_DURATION) {
+    console.log('Using cached data (fresh enough)');
+    return;
+  }
+  
   if (isLoading) return;
   isLoading = true;
+  showLoader(true);
+  
   try {
+    // Add cache control headers to the request
     const response = await fetch(`${SUPABASE_URL}/rest/v1/items?select=*`, {
       headers: {
         'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Cache-Control': 'max-age=300' // Cache API response for 5 minutes
       }
     });
     
@@ -146,24 +190,35 @@ async function loadGallery() {
     }
     
     let data = await response.json();
-    // Sort by timestamp (newest first)
     data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-    // Check if data actually changed (compare IDs)
+    // Only re-render if data actually changed
     const newIds = data.map(item => item.id).join(',');
     const oldIds = currentItems.map(item => item.id).join(',');
-    if (newIds === oldIds) {
-      isLoading = false;
-      return; // No change, skip re-render
+    
+    if (newIds !== oldIds) {
+      currentItems = data;
+      renderGallery(data);
+      lastUpdateTime = now;
+      console.log('Gallery updated with new content');
+    } else if (currentItems.length === 0 && data.length > 0) {
+      // Initial load with content
+      currentItems = data;
+      renderGallery(data);
+      lastUpdateTime = now;
+    } else if (data.length === 0) {
+      renderGallery([]);
     }
-
-    currentItems = data;
-    renderGallery(data);
+    
   } catch (error) {
     console.error('Error loading gallery:', error);
-    document.getElementById("gallery").innerHTML = "<p style='color: #ff4da6;'>Error loading content. Please refresh.</p>";
+    // Only show error if we have no content to display
+    if (currentItems.length === 0) {
+      document.getElementById("gallery").innerHTML = "<p style='color: #ff4da6;'>Error loading content. Please refresh.</p>";
+    }
   } finally {
     isLoading = false;
+    showLoader(false);
   }
 }
 
@@ -179,10 +234,13 @@ function renderGallery(items) {
   items.forEach(item => {
     const div = document.createElement("div");
     div.className = "card";
-    // Add loading="lazy" for native lazy loading
+    // Add referrerpolicy for better caching
     div.innerHTML = `
-      <img src="${item.image}" alt="Viral content" loading="lazy" />
-      <a href="${item.link}" target="_blank" class="btn">Watch Now</a>
+      <img src="${item.image}" 
+           alt="Viral content" 
+           loading="lazy"
+           referrerpolicy="no-referrer" />
+      <a href="${item.link}" target="_blank" rel="noopener noreferrer" class="btn">Watch Now</a>
     `;
     fragment.appendChild(div);
   });
@@ -191,15 +249,46 @@ function renderGallery(items) {
   gallery.appendChild(fragment);
 }
 
+// Register Service Worker for persistent caching
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js')
+    .then(reg => console.log('✅ Service Worker registered'))
+    .catch(err => console.error('❌ Service Worker failed:', err));
+}
+
 // Initial load
 loadGallery();
 
-// Refresh every 30 seconds but only if page is visible
+// Refresh less frequently (every 5 minutes instead of 30 seconds)
+// Only refresh when page is visible
 setInterval(() => {
   if (!document.hidden) {
-    loadGallery();
+    loadGallery(false);
   }
-}, 30000);
+}, 300000); // 5 minutes
+
+// Also refresh when page becomes visible again (user returns to tab)
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) {
+    // User came back to the page, do a quick refresh
+    loadGallery(false);
+  }
+});
+
+// Optional: Manual refresh on scroll to top (user pull-to-refresh)
+let touchStart = 0;
+document.addEventListener('touchstart', (e) => {
+  if (window.scrollY === 0) {
+    touchStart = e.touches[0].clientY;
+  }
+});
+document.addEventListener('touchend', (e) => {
+  const touchEnd = e.changedTouches[0].clientY;
+  if (window.scrollY === 0 && touchEnd > touchStart + 80) {
+    // Pull-to-refresh gesture
+    loadGallery(true);
+  }
+});
 </script>
 </body>
 </html>

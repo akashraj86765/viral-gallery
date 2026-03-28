@@ -1,5 +1,6 @@
 const axios = require("axios");
 const { createClient } = require('@supabase/supabase-js');
+const sharp = require('sharp'); // Add this for image compression
 
 const ADMIN_ID = 6354768795; // Your Telegram user ID
 
@@ -116,7 +117,7 @@ exports.handler = async (event) => {
       return { statusCode: 200, body: 'Reset confirmation sent' };
     }
 
-    // Upload post
+    // Upload post with COMPRESSION
     if (msg.photo && msg.caption) {
       const photo = msg.photo[msg.photo.length - 1];
       const fileId = photo.file_id;
@@ -132,12 +133,26 @@ exports.handler = async (event) => {
       const imageResponse = await axios.get(fileUrl, { responseType: 'arraybuffer' });
       const imageBuffer = Buffer.from(imageResponse.data, 'binary');
 
-      const fileName = `gallery/${Date.now()}_${fileId}.jpg`;
+      // 🔥 COMPRESS IMAGE: Resize to max 800px width, convert to WebP, 70% quality
+      console.log(`Compressing image: original size = ${(imageBuffer.length / 1024).toFixed(2)} KB`);
+      
+      const compressedBuffer = await sharp(imageBuffer)
+        .resize(800, null, { // Max width 800px, maintain aspect ratio
+          withoutEnlargement: true,
+          fit: 'inside'
+        })
+        .webp({ quality: 70 }) // WebP format with 70% quality
+        .toBuffer();
+      
+      console.log(`Compressed size = ${(compressedBuffer.length / 1024).toFixed(2)} KB (${Math.round((1 - compressedBuffer.length / imageBuffer.length) * 100)}% reduction)`);
+
+      // Use .webp extension for better compression
+      const fileName = `gallery/${Date.now()}_${fileId}.webp`;
       const { error: uploadError } = await supabase.storage
         .from('gallery-images')
-        .upload(fileName, imageBuffer, {
-          contentType: 'image/jpeg',
-          cacheControl: '3600'
+        .upload(fileName, compressedBuffer, {
+          contentType: 'image/webp',
+          cacheControl: '31536000' // 🔥 Cache for 1 YEAR (reduces repeat downloads)
         });
 
       if (uploadError) throw uploadError;
@@ -184,7 +199,78 @@ exports.handler = async (event) => {
       return { statusCode: 200, body: 'Photo saved' };
     }
 
-    // Reply-based actions
+    // Update thumbnail with COMPRESSION
+    if (msg.reply_to_message && msg.text && msg.text.toLowerCase() === "/update_thumbnail" && msg.photo) {
+      const replyId = msg.reply_to_message.message_id;
+
+      const { data: mappingData } = await axios.get(
+        `${supabaseUrl}/rest/v1/message_map?message_id=eq.${replyId}&select=item_id`,
+        {
+          headers: {
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${supabaseKey}`
+          }
+        }
+      );
+
+      if (!mappingData || mappingData.length === 0) {
+        await axios.post(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`, {
+          chat_id: chatId,
+          text: "❌ No post found for this message!"
+        });
+        return { statusCode: 200, body: 'No mapping found' };
+      }
+
+      const dbId = mappingData[0].item_id;
+      const photo = msg.photo[msg.photo.length - 1];
+      const fileId = photo.file_id;
+
+      const fileInfo = await axios.get(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/getFile?file_id=${fileId}`);
+      const fileUrl = `https://api.telegram.org/file/bot${process.env.BOT_TOKEN}/${fileInfo.data.result.file_path}`;
+
+      const imageResponse = await axios.get(fileUrl, { responseType: 'arraybuffer' });
+      const imageBuffer = Buffer.from(imageResponse.data, 'binary');
+
+      // Compress thumbnail as well
+      const compressedBuffer = await sharp(imageBuffer)
+        .resize(800, null, { withoutEnlargement: true, fit: 'inside' })
+        .webp({ quality: 70 })
+        .toBuffer();
+
+      const fileName = `gallery/${Date.now()}_${fileId}.webp`;
+      const { error: uploadError } = await supabase.storage
+        .from('gallery-images')
+        .upload(fileName, compressedBuffer, {
+          contentType: 'image/webp',
+          cacheControl: '31536000' // 1 year cache
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from('gallery-images')
+        .getPublicUrl(fileName);
+      const permanentImageUrl = urlData.publicUrl;
+
+      await axios.patch(`${supabaseUrl}/rest/v1/items?id=eq.${dbId}`, {
+        image: permanentImageUrl
+      }, {
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      await axios.post(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`, {
+        chat_id: chatId,
+        text: "✅ Thumbnail updated!"
+      });
+      
+      return { statusCode: 200, body: 'Thumbnail updated' };
+    }
+
+    // Reply-based actions (delete, update link)
     if (msg.reply_to_message && msg.text) {
       const replyId = msg.reply_to_message.message_id;
 
@@ -220,47 +306,6 @@ exports.handler = async (event) => {
         await axios.post(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`, {
           chat_id: chatId,
           text: "✅ Post deleted!"
-        });
-      }
-
-      // Update thumbnail
-      else if (msg.text.toLowerCase() === "/update_thumbnail" && msg.photo) {
-        const photo = msg.photo[msg.photo.length - 1];
-        const fileId = photo.file_id;
-
-        const fileInfo = await axios.get(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/getFile?file_id=${fileId}`);
-        const fileUrl = `https://api.telegram.org/file/bot${process.env.BOT_TOKEN}/${fileInfo.data.result.file_path}`;
-
-        const imageResponse = await axios.get(fileUrl, { responseType: 'arraybuffer' });
-        const imageBuffer = Buffer.from(imageResponse.data, 'binary');
-        const fileName = `gallery/${Date.now()}_${fileId}.jpg`;
-        const { error: uploadError } = await supabase.storage
-          .from('gallery-images')
-          .upload(fileName, imageBuffer, {
-            contentType: 'image/jpeg',
-            cacheControl: '3600'
-          });
-
-        if (uploadError) throw uploadError;
-
-        const { data: urlData } = supabase.storage
-          .from('gallery-images')
-          .getPublicUrl(fileName);
-        const permanentImageUrl = urlData.publicUrl;
-
-        await axios.patch(`${supabaseUrl}/rest/v1/items?id=eq.${dbId}`, {
-          image: permanentImageUrl
-        }, {
-          headers: {
-            'apikey': supabaseKey,
-            'Authorization': `Bearer ${supabaseKey}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        await axios.post(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`, {
-          chat_id: chatId,
-          text: "✅ Thumbnail updated!"
         });
       }
 
