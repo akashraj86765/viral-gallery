@@ -62,7 +62,7 @@
     width: 100%;
     height: auto;
     display: block;
-    background: #333; /* placeholder while loading */
+    background: #333;
   }
 
   .btn {
@@ -102,7 +102,6 @@
     background: #4CAF50;
   }
 
-  /* Mobile reel-style partial next post visible */
   @media (max-width: 768px) {
     #gallery {
       gap: 20px;
@@ -113,7 +112,6 @@
     }
   }
 
-  /* Loading indicator */
   .loader {
     border: 4px solid #f3f3f3;
     border-top: 4px solid #ff1a75;
@@ -128,28 +126,11 @@
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
   }
-
-  /* Maintenance banner style */
-  .maintenance-banner {
-    background: #ff1a75;
-    padding: 12px;
-    margin: 10px auto;
-    max-width: 90%;
-    border-radius: 10px;
-    font-weight: bold;
-    text-align: center;
-    box-shadow: 0 0 15px rgba(255,26,117,0.5);
-  }
 </style>
 </head>
 <body>
 
-<!-- Maintenance Banner -->
-<div class="maintenance-banner">
-  ⚡ Site maintenance until April 3rd. New content coming soon! ⚡
-</div>
-
-<h1>Viral Videos Gallery 🔥</h1>
+<h1>Instagram Viral Videos 🔥</h1>
 <h3>To Play Videos Download DiskWala App First</h3>
 
 <!-- DiskWala App Download Button -->
@@ -165,12 +146,12 @@
 const SUPABASE_URL = 'https://podqvmggwcszipcbnzdv.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBvZHF2bWdnd2NzemlwY2JuemR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE5NDgyMDksImV4cCI6MjA3NzUyNDIwOX0.3Hx-8GohlMV5wTeEUZ1UYE72V8934zpoNA3bNup8CmE';
 
+const MAX_POSTS = 100; // Only fetch latest 100 posts
 let currentItems = [];
 let isLoading = false;
 let lastUpdateTime = 0;
 const CACHE_DURATION = 300000; // 5 minutes between refreshes
 
-// Show/hide loader
 function showLoader(show) {
   const loader = document.getElementById('loader');
   if (loader) {
@@ -178,13 +159,11 @@ function showLoader(show) {
   }
 }
 
-// Load gallery from Supabase with caching
 async function loadGallery(forceRefresh = false) {
   const now = Date.now();
   
-  // Don't refresh too often if we already have content (unless forced)
   if (!forceRefresh && currentItems.length > 0 && (now - lastUpdateTime) < CACHE_DURATION) {
-    console.log('Using cached data (fresh enough)');
+    console.log('Using cached data');
     return;
   }
   
@@ -193,12 +172,12 @@ async function loadGallery(forceRefresh = false) {
   showLoader(true);
   
   try {
-    // Add cache control headers to the request
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/items?select=*`, {
+    // Fetch only latest MAX_POSTS posts, ordered by newest first
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/items?select=*&order=created_at.desc&limit=${MAX_POSTS}`, {
       headers: {
         'apikey': SUPABASE_ANON_KEY,
         'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-        'Cache-Control': 'max-age=300' // Cache API response for 5 minutes
+        'Cache-Control': 'max-age=300'
       }
     });
     
@@ -207,9 +186,8 @@ async function loadGallery(forceRefresh = false) {
     }
     
     let data = await response.json();
-    data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
-    // Only re-render if data actually changed
+    // Data is already sorted by created_at.desc from the query
+    
     const newIds = data.map(item => item.id).join(',');
     const oldIds = currentItems.map(item => item.id).join(',');
     
@@ -217,9 +195,8 @@ async function loadGallery(forceRefresh = false) {
       currentItems = data;
       renderGallery(data);
       lastUpdateTime = now;
-      console.log('Gallery updated with new content');
+      console.log(`Gallery updated: ${data.length} items (latest ${MAX_POSTS})`);
     } else if (currentItems.length === 0 && data.length > 0) {
-      // Initial load with content
       currentItems = data;
       renderGallery(data);
       lastUpdateTime = now;
@@ -229,7 +206,6 @@ async function loadGallery(forceRefresh = false) {
     
   } catch (error) {
     console.error('Error loading gallery:', error);
-    // Only show error if we have no content to display
     if (currentItems.length === 0) {
       document.getElementById("gallery").innerHTML = "<p style='color: #ff4da6;'>Error loading content. Please refresh.</p>";
     }
@@ -251,48 +227,37 @@ function renderGallery(items) {
   items.forEach(item => {
     const div = document.createElement("div");
     div.className = "card";
-    // Add referrerpolicy for better caching
     div.innerHTML = `
-      <img src="${item.image}" 
-           alt="Viral content" 
-           loading="lazy"
-           referrerpolicy="no-referrer" />
+      <img src="${item.image}" alt="Viral content" loading="lazy" referrerpolicy="no-referrer" />
       <a href="${item.link}" target="_blank" rel="noopener noreferrer" class="btn">Watch Now</a>
     `;
     fragment.appendChild(div);
   });
 
-  gallery.innerHTML = ""; // Clear previous
+  gallery.innerHTML = "";
   gallery.appendChild(fragment);
 }
 
-// Register Service Worker for persistent caching
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js')
     .then(reg => console.log('✅ Service Worker registered'))
     .catch(err => console.error('❌ Service Worker failed:', err));
 }
 
-// Initial load
 loadGallery();
 
-// Refresh less frequently (every 5 minutes instead of 30 seconds)
-// Only refresh when page is visible
 setInterval(() => {
   if (!document.hidden) {
     loadGallery(false);
   }
-}, 300000); // 5 minutes
+}, 300000);
 
-// Also refresh when page becomes visible again (user returns to tab)
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden) {
-    // User came back to the page, do a quick refresh
     loadGallery(false);
   }
 });
 
-// Optional: Manual refresh on scroll to top (user pull-to-refresh)
 let touchStart = 0;
 document.addEventListener('touchstart', (e) => {
   if (window.scrollY === 0) {
@@ -302,7 +267,6 @@ document.addEventListener('touchstart', (e) => {
 document.addEventListener('touchend', (e) => {
   const touchEnd = e.changedTouches[0].clientY;
   if (window.scrollY === 0 && touchEnd > touchStart + 80) {
-    // Pull-to-refresh gesture
     loadGallery(true);
   }
 });
